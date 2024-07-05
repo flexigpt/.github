@@ -1,2 +1,0 @@
-# .github
-FlexiGPT organization profile
