@@ -12,10 +12,12 @@ version: "3"
 
 vars:
   _USER_GO_PATH: '{{.GO_MODULE_PATH}}'
-  _GO_MODULE_PATH_FALLBACK: {sh: go list -m}
-  _RESOLVED_GO_PATH: '{{if ._USER_GO_PATH}}{{._USER_GO_PATH}}{{else}}{{._GO_MODULE_PATH_FALLBACK}}{{end}}'
-  _DEPGRAPH_ONLYPREFIXES_FALLBACK: '{{printf "%s,command-line-arguments" ._RESOLVED_GO_PATH}}'
   _USER_DEPGRAPH_ONLYPREFIXES: '{{.DEPGRAPH_ONLYPREFIXES}}'
+
+  _GO_MODULE_PATH_FALLBACK: {sh: go list -m}
+  _DEPGRAPH_ONLYPREFIXES_FALLBACK: '{{if ._USER_GO_PATH}}{{._USER_GO_PATH}},command-line-arguments{{else}}{{._GO_MODULE_PATH_FALLBACK}},command-line-arguments{{end}}'
+  
+  _RESOLVED_GO_PATH: '{{if ._USER_GO_PATH}}{{._USER_GO_PATH}}{{else}}{{._GO_MODULE_PATH_FALLBACK}}{{end}}'
   _RESOLVED_DEPGRAPH_ONLYPREFIXES: '{{if ._USER_DEPGRAPH_ONLYPREFIXES}}{{._USER_DEPGRAPH_ONLYPREFIXES}}{{else}}{{._DEPGRAPH_ONLYPREFIXES_FALLBACK}}{{end}}'
 
   # Repository configuration.
