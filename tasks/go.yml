@@ -60,6 +60,7 @@ tasks:
     desc: Show the base Go task greeting
     cmds:
       - echo {{.GREETING | shellQuote}}
+      - task --list-all
     silent: true
 
   install-tools:
