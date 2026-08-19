@@ -124,7 +124,7 @@ tasks:
         files_per_job={{.GOPLS_FILES_PER_JOB | shellQuote}}
         file_list="$(mktemp "${TMPDIR:-/tmp}/gopls-files.XXXXXX")"
 
-        trap 'rm -f "$file_list"' EXIT INT TERM
+        trap 'rm -f "$file_list"' EXIT
 
         find "$input_dir" \
           -type d -name vendor -prune -o \
