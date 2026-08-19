@@ -24,6 +24,12 @@ vars:
   DEPGRAPH_OMIT_PACKAGES: '{{.DEPGRAPH_OMIT_PACKAGES | default (printf "%s,command-line-arguments" .GO_MODULE_PATH)}}'
   DEPGRAPH_OUTPUT_FILE: '{{.DEPGRAPH_OUTPUT_FILE | default "godepgraph.png"}}'
 
+  # gopls configuration.
+  # This path is relative to GO_REPO_DIR.
+  GOPLS_INPUT_DIR: '{{.GOPLS_INPUT_DIR | default "."}}'
+  GOPLS_JOBS: '{{.GOPLS_JOBS | default "8"}}'
+  GOPLS_FILES_PER_JOB: '{{.GOPLS_FILES_PER_JOB | default "100"}}'
+
   # Lint configuration.
   SPECIFIC_LINTER: '{{.SPECIFIC_LINTER | default ""}}'
 
@@ -107,28 +113,41 @@ tasks:
       - refdir ./...
 
   lint-gopls:
-    desc: Run gopls checks for all repository Go files
+    desc: Run gopls checks for Go files in the selected directory
     dir: "{{.GO_REPO_DIR}}"
-    vars:
-      GO_FILES:
-        sh: find . -type f -name '*.go' -not -path './vendor/*'
+    set:
+      - pipefail
     cmds:
-      - for:
-          var: GO_FILES
-          split: "\n"
-        task: lint-gopls-file
-        vars:
-          GO_FILE: "{{.ITEM}}"
-        parallel: true
+      - |
+        input_dir={{.GOPLS_INPUT_DIR | shellQuote}}
+        jobs={{.GOPLS_JOBS | shellQuote}}
+        files_per_job={{.GOPLS_FILES_PER_JOB | shellQuote}}
+        file_list="$(mktemp "${TMPDIR:-/tmp}/gopls-files.XXXXXX")"
 
-  lint-gopls-file:
-    internal: true
-    dir: "{{.GO_REPO_DIR}}"
-    requires:
-      vars:
-        - GO_FILE
-    cmds:
-      - gopls check -- {{.GO_FILE | shellQuote}}
+        trap 'rm -f "$file_list"' EXIT HUP INT TERM
+
+        find "$input_dir" \
+          -type d -name vendor -prune -o \
+          -type f -name '*.go' -print0 > "$file_list"
+
+        if [ ! -s "$file_list" ]; then
+          echo "gopls: no Go files found in $input_dir"
+          exit 0
+        fi
+
+        total="$(tr -cd '\000' < "$file_list" | wc -c | tr -d '[:space:]')"
+        batches=$(( (total + files_per_job - 1) / files_per_job ))
+
+        printf 'gopls: checking %s file(s) in up to %s batch(es), with %s concurrent job(s)\n' \
+          "$total" "$batches" "$jobs"
+
+        xargs -0 \
+          -n "$files_per_job" \
+          -P "$jobs" \
+          sh -c '
+            printf "gopls: checking batch containing %s file(s)\n" "$#"
+            exec gopls check -- "$@"
+          ' sh < "$file_list"
 
   lint-fix-specific:
     desc: Apply fixes from one golangci-lint linter
