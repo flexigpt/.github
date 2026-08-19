@@ -77,8 +77,6 @@ tasks:
 
   depgraph:
     desc: Generate a Go dependency graph
-    aliases:
-      - godepgraph
     dir: "{{.GO_REPO_DIR}}"
     set:
       - pipefail
@@ -200,8 +198,6 @@ tasks:
 
   coverage-check:
     desc: Validate coverage against the repository policy
-    aliases:
-      - coverage-test
     dir: "{{.GO_REPO_DIR}}"
     cmds:
       - >-
