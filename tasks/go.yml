@@ -62,6 +62,54 @@ tasks:
       - task --list-all
     silent: true
 
+  print-all-vars:
+    desc: "Prints all defined Go toolchain and configuration variables"
+    silent: true
+    cmds:
+      - |
+        echo "=== CORE GO VARS ==="
+        echo "GREETING:                     {{.GREETING}}"
+        echo "GO_REPO_DIR:                  {{.GO_REPO_DIR}}"
+        echo ""
+        echo "=== RESOLUTION PATHS ==="
+        echo "_USER_GO_PATH:                {{._USER_GO_PATH}}"
+        echo "_GO_MODULE_PATH_FALLBACK:     {{._GO_MODULE_PATH_FALLBACK}}"
+        echo "_RESOLVED_GO_PATH:            {{._RESOLVED_GO_PATH}}"
+        echo "GO_MODULE_PATH:               {{.GO_MODULE_PATH}}"
+        echo ""
+        echo "=== DEPGRAPH CONFIG ==="
+        echo "DEPGRAPH_ENTRY_POINT:         {{.DEPGRAPH_ENTRY_POINT}}"
+        echo "DEPGRAPH_OMIT_PACKAGES:       {{.DEPGRAPH_OMIT_PACKAGES}}"
+        echo "DEPGRAPH_OUTPUT_FILE:         {{.DEPGRAPH_OUTPUT_FILE}}"
+        echo ""
+        echo "=== GOPLS CONFIG ==="
+        echo "GOPLS_INPUT_DIR:              {{.GOPLS_INPUT_DIR}}"
+        echo "GOPLS_JOBS:                   {{.GOPLS_JOBS}}"
+        echo "GOPLS_FILES_PER_JOB:          {{.GOPLS_FILES_PER_JOB}}"
+        echo ""
+        echo "=== LINT & TEST CONFIG ==="
+        echo "SPECIFIC_LINTER:              {{.SPECIFIC_LINTER}}"
+        echo "GO_TEST_COUNT:                {{.GO_TEST_COUNT}}"
+        echo "GO_TEST_PACKAGE_PATTERN:      {{.GO_TEST_PACKAGE_PATTERN}}"
+        echo "GO_TEST_TAGS:                 {{.GO_TEST_TAGS}}"
+        echo ""
+        echo "=== COVERAGE CONFIG ==="
+        echo "GO_COVERAGE_MODE:             {{.GO_COVERAGE_MODE}}"
+        echo "GO_COVERAGE_PACKAGE_PATTERN:  {{.GO_COVERAGE_PACKAGE_PATTERN}}"
+        echo "GO_COVERAGE_PROFILE:          {{.GO_COVERAGE_PROFILE}}"
+        echo "GO_COVERAGE_CONFIG_FILE:      {{.GO_COVERAGE_CONFIG_FILE}}"
+        echo "GO_COVERAGE_BREAKDOWN_FILE:   {{.GO_COVERAGE_BREAKDOWN_FILE}}"
+        echo ""
+        echo "=== TOOL VERSIONS ==="
+        echo "GOPLS_VERSION:                {{.GOPLS_VERSION}}"
+        echo "GOLANGCI_LINT_VERSION:        {{.GOLANGCI_LINT_VERSION}}"
+        echo "GOMAJOR_VERSION:              {{.GOMAJOR_VERSION}}"
+        echo "GO_MOD_UPGRADE_VERSION:       {{.GO_MOD_UPGRADE_VERSION}}"
+        echo "GODEPGRAPH_VERSION:           {{.GODEPGRAPH_VERSION}}"
+        echo "REFDIR_VERSION:               {{.REFDIR_VERSION}}"
+        echo "GO_TEST_COVERAGE_VERSION:     {{.GO_TEST_COVERAGE_VERSION}}"
+
+
   install-tools:
     desc: Install pinned Go development tools
     cmds:
@@ -106,6 +154,7 @@ tasks:
       - go-mod-upgrade -l
 
   fmt:
+    desc: Run golangci-lint fmt
     cmds:
       - golangci-lint fmt
 
@@ -153,6 +202,7 @@ tasks:
           ' sh < "$file_list"
 
   lint-fix:
+    desc: Run golangci-lint run --fix
     cmds:
       - golangci-lint run --fix
 
