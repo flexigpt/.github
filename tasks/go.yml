@@ -14,24 +14,18 @@ vars:
   # Repository configuration.
   GREETING: '{{.GREETING | default "Hello, these are Go tasks!"}}'
   GO_REPO_DIR: '{{.GO_REPO_DIR | default "."}}'
-
-  # 1. Capture the raw input if passed by the consumer
+  
   _USER_GO_PATH: '{{.GO_MODULE_PATH | default ""}}'
+  _GO_MODULE_PATH_FALLBACK:
+    sh: go list -m
+  _RESOLVED_GO_PATH: '{{if ._USER_GO_PATH}}{{._USER_GO_PATH}}{{else}}{{._GO_MODULE_PATH_FALLBACK}}{{end}}'
 
-  # 2. Consolidate into a single internal variable. 
-  # If the consumer didn't pass it, run the shell command.
-  _RESOLVED_GO_PATH: '{{if ._USER_GO_PATH}}{{._USER_GO_PATH}}{{else}}{{cat (sh "go list -m")}}{{end}}'
-
-  # 3. Expose the clean public variable for the rest of your Taskfile
   GO_MODULE_PATH: '{{._RESOLVED_GO_PATH}}'
-
-  # 4. These will now resolve perfectly because _RESOLVED_GO_PATH is fully evaluated
   DEPGRAPH_ENTRY_POINT: '{{.DEPGRAPH_ENTRY_POINT | default ._RESOLVED_GO_PATH}}'
   DEPGRAPH_OMIT_PACKAGES: '{{.DEPGRAPH_OMIT_PACKAGES | default (printf "%s,command-line-arguments" ._RESOLVED_GO_PATH)}}'
   DEPGRAPH_OUTPUT_FILE: '{{.DEPGRAPH_OUTPUT_FILE | default "godepgraph.png"}}'
 
-  # gopls configuration.
-  # This path is relative to GO_REPO_DIR.
+  # gopls configuration. This path is relative to GO_REPO_DIR.
   GOPLS_INPUT_DIR: '{{.GOPLS_INPUT_DIR | default "."}}'
   GOPLS_JOBS: '{{.GOPLS_JOBS | default "8"}}'
   GOPLS_FILES_PER_JOB: '{{.GOPLS_FILES_PER_JOB | default "100"}}'
