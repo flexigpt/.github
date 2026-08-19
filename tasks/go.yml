@@ -104,6 +104,10 @@ tasks:
       - gomajor list
       - go-mod-upgrade -l
 
+  fmt-go:
+    cmds:
+      - golangci-lint fmt
+
   lint-sort:
     desc: Run refdir checks
     dir: "{{.GO_REPO_DIR}}"
@@ -146,6 +150,10 @@ tasks:
             printf "gopls: checking batch containing %s file(s)\n" "$#"
             exec gopls check -- "$@"
           ' sh < "$file_list"
+
+  lint-fix:
+    cmds:
+      - golangci-lint run --fix
 
   lint-fix-specific:
     desc: Apply fixes from one golangci-lint linter
