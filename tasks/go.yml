@@ -14,9 +14,9 @@ vars:
   _USER_GO_PATH: '{{.GO_MODULE_PATH | default ""}}'
   _GO_MODULE_PATH_FALLBACK: {sh: go list -m}
   _RESOLVED_GO_PATH: '{{if ._USER_GO_PATH}}{{._USER_GO_PATH}}{{else}}{{._GO_MODULE_PATH_FALLBACK}}{{end}}'
-  _DEPGRAPH_OMIT_PACKAGES_FALLBACK: '{{printf "%s,command-line-arguments" ._RESOLVED_GO_PATH}}'
-  _USER_DEPGRAPH_OMIT_PACKAGES: '{{.DEPGRAPH_OMIT_PACKAGES | default ""}}'
-  _RESOLVED_DEPGRAPH_OMIT_PACKAGES: '{{if ._USER_DEPGRAPH_OMIT_PACKAGES}}{{._USER_DEPGRAPH_OMIT_PACKAGES}}{{else}}{{._DEPGRAPH_OMIT_PACKAGES_FALLBACK}}{{end}}'
+  _DEPGRAPH_ONLYPREFIXES_FALLBACK: '{{printf "%s,command-line-arguments" ._RESOLVED_GO_PATH}}'
+  _USER_DEPGRAPH_ONLYPREFIXES: '{{.DEPGRAPH_ONLYPREFIXES | default ""}}'
+  _RESOLVED_DEPGRAPH_ONLYPREFIXES: '{{if ._USER_DEPGRAPH_ONLYPREFIXES}}{{._USER_DEPGRAPH_ONLYPREFIXES}}{{else}}{{._DEPGRAPH_ONLYPREFIXES_FALLBACK}}{{end}}'
 
   # Repository configuration.
   GREETING: '{{.GREETING | default "Hello, these are Go tasks!"}}'
@@ -24,7 +24,7 @@ vars:
   
   GO_MODULE_PATH: '{{._RESOLVED_GO_PATH}}'
   DEPGRAPH_ENTRY_POINT: '{{.DEPGRAPH_ENTRY_POINT | default ._RESOLVED_GO_PATH}}'
-  DEPGRAPH_OMIT_PACKAGES: '{{._RESOLVED_DEPGRAPH_OMIT_PACKAGES}}'
+  DEPGRAPH_ONLYPREFIXES: '{{._RESOLVED_DEPGRAPH_ONLYPREFIXES}}'
   DEPGRAPH_OUTPUT_FILE: '{{.DEPGRAPH_OUTPUT_FILE | default "godepgraph.png"}}'
 
   # gopls configuration. This path is relative to GO_REPO_DIR.
@@ -81,7 +81,7 @@ tasks:
         echo ""
         echo "=== DEPGRAPH CONFIG ==="
         echo "DEPGRAPH_ENTRY_POINT:         {{.DEPGRAPH_ENTRY_POINT}}"
-        echo "DEPGRAPH_OMIT_PACKAGES:       {{.DEPGRAPH_OMIT_PACKAGES}}"
+        echo "DEPGRAPH_ONLYPREFIXES:       {{.DEPGRAPH_ONLYPREFIXES}}"
         echo "DEPGRAPH_OUTPUT_FILE:         {{.DEPGRAPH_OUTPUT_FILE}}"
         echo ""
         echo "=== GOPLS CONFIG ==="
@@ -126,7 +126,7 @@ tasks:
       - go install github.com/vladopajic/go-test-coverage/v2@{{.GO_TEST_COVERAGE_VERSION}}
 
   depgraph:
-    desc: Generate a Go dependency graph
+    desc: Generate a Go dependency graph within the repo.
     dir: "{{.GO_REPO_DIR}}"
     set:
       - pipefail
@@ -134,7 +134,7 @@ tasks:
       - >-
         godepgraph
         -s
-        -o {{.DEPGRAPH_OMIT_PACKAGES | shellQuote}}
+        -o {{.DEPGRAPH_ONLYPREFIXES | shellQuote}}
         {{.DEPGRAPH_ENTRY_POINT | shellQuote}}
         |
         dot
