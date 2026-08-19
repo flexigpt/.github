@@ -1,6 +1,7 @@
 # https://taskfile.dev
 
-# Generate sha256 as: curl -sSL -H "Cache-Control: no-cache" -H "Pragma: no-cache" https://raw.githubusercontent.com/flexigpt/.github/refs/heads/main/tasks/go.yml | shasum -a 256
+# Generate sha256 as:
+# curl -sSL -H "Cache-Control: no-cache" -H "Pragma: no-cache" https://raw.githubusercontent.com/flexigpt/.github/refs/heads/main/tasks/go.yml | shasum -a 256
 #
 # includes:
 #   go:
