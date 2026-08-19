@@ -12,7 +12,7 @@ version: "3"
 
 vars:
   # Repository configuration.
-  GREETING: '{{.GREETING | default "Hello, these are base Go tasks!"}}'
+  GREETING: '{{.GREETING | default "Hello, these are Go tasks!"}}'
   GO_REPO_DIR: '{{.GO_REPO_DIR | default "."}}'
 
   # `GO_MODULE_PATH` remains dynamic. A supplied Task variable overrides it;
