@@ -11,43 +11,42 @@ version: "3"
 
 vars:
   # Repository configuration.
-  GREETING: Hello, these are base Go tasks!
-  GO_REPO_DIR: "."
+  GREETING: '{{.GREETING | default "Hello, these are base Go tasks!"}}'
+  GO_REPO_DIR: '{{.GO_REPO_DIR | default "."}}'
 
-  # `go list -m` returns the current module path, for example:
-  # github.com/flexigpt/llmtools-go
+  # `GO_MODULE_PATH` remains dynamic. A supplied Task variable overrides it;
+  # otherwise it is resolved using `go list -m`.
   GO_MODULE_PATH:
     sh: go list -m
 
   # Dependency graph configuration.
-  # By default, graph the package at the module root.
-  DEPGRAPH_ENTRY_POINT: "{{.GO_MODULE_PATH}}"
-  DEPGRAPH_OMIT_PACKAGES: "{{.GO_MODULE_PATH}},command-line-arguments"
-  DEPGRAPH_OUTPUT_FILE: godepgraph.png
+  DEPGRAPH_ENTRY_POINT: '{{.DEPGRAPH_ENTRY_POINT | default .GO_MODULE_PATH}}'
+  DEPGRAPH_OMIT_PACKAGES: '{{.DEPGRAPH_OMIT_PACKAGES | default (printf "%s,command-line-arguments" .GO_MODULE_PATH)}}'
+  DEPGRAPH_OUTPUT_FILE: '{{.DEPGRAPH_OUTPUT_FILE | default "godepgraph.png"}}'
 
   # Lint configuration.
-  SPECIFIC_LINTER: ''
+  SPECIFIC_LINTER: '{{.SPECIFIC_LINTER | default ""}}'
 
   # Test configuration.
-  GO_TEST_COUNT: "1"
-  GO_TEST_PACKAGE_PATTERN: ./...
-  GO_TEST_TAGS: "integration"
+  GO_TEST_COUNT: '{{.GO_TEST_COUNT | default "1"}}'
+  GO_TEST_PACKAGE_PATTERN: '{{.GO_TEST_PACKAGE_PATTERN | default "./..."}}'
+  GO_TEST_TAGS: '{{.GO_TEST_TAGS | default "integration"}}'
 
   # Coverage configuration.
-  GO_COVERAGE_MODE: atomic
-  GO_COVERAGE_PACKAGE_PATTERN: ./...
-  GO_COVERAGE_PROFILE: coverage.out
-  GO_COVERAGE_CONFIG_FILE: .testcoverage.yml
-  GO_COVERAGE_BREAKDOWN_FILE: file_breakdown.txt
+  GO_COVERAGE_MODE: '{{.GO_COVERAGE_MODE | default "atomic"}}'
+  GO_COVERAGE_PACKAGE_PATTERN: '{{.GO_COVERAGE_PACKAGE_PATTERN | default "./..."}}'
+  GO_COVERAGE_PROFILE: '{{.GO_COVERAGE_PROFILE | default "coverage.out"}}'
+  GO_COVERAGE_CONFIG_FILE: '{{.GO_COVERAGE_CONFIG_FILE | default ".testcoverage.yml"}}'
+  GO_COVERAGE_BREAKDOWN_FILE: '{{.GO_COVERAGE_BREAKDOWN_FILE | default "file_breakdown.txt"}}'
 
   # Tool versions.
-  GOPLS_VERSION: v0.23.0
-  GOLANGCI_LINT_VERSION: v2.12.2
-  GOMAJOR_VERSION: v0.15.0
-  GO_MOD_UPGRADE_VERSION: v0.12.0
-  GODEPGRAPH_VERSION: v1.0.0
-  REFDIR_VERSION: v0.7.1
-  GO_TEST_COVERAGE_VERSION: v2.19.0
+  GOPLS_VERSION: '{{.GOPLS_VERSION | default "v0.23.0"}}'
+  GOLANGCI_LINT_VERSION: '{{.GOLANGCI_LINT_VERSION | default "v2.12.2"}}'
+  GOMAJOR_VERSION: '{{.GOMAJOR_VERSION | default "v0.15.0"}}'
+  GO_MOD_UPGRADE_VERSION: '{{.GO_MOD_UPGRADE_VERSION | default "v0.12.0"}}'
+  GODEPGRAPH_VERSION: '{{.GODEPGRAPH_VERSION | default "v1.0.0"}}'
+  REFDIR_VERSION: '{{.REFDIR_VERSION | default "v0.7.1"}}'
+  GO_TEST_COVERAGE_VERSION: '{{.GO_TEST_COVERAGE_VERSION | default "v2.19.0"}}'
 
 tasks:
   default:
