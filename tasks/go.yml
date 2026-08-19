@@ -11,11 +11,11 @@
 version: "3"
 
 vars:
-  _USER_GO_PATH: '{{.GO_MODULE_PATH | default ""}}'
+  _USER_GO_PATH: '{{.GO_MODULE_PATH}}'
   _GO_MODULE_PATH_FALLBACK: {sh: go list -m}
   _RESOLVED_GO_PATH: '{{if ._USER_GO_PATH}}{{._USER_GO_PATH}}{{else}}{{._GO_MODULE_PATH_FALLBACK}}{{end}}'
   _DEPGRAPH_ONLYPREFIXES_FALLBACK: '{{printf "%s,command-line-arguments" ._RESOLVED_GO_PATH}}'
-  _USER_DEPGRAPH_ONLYPREFIXES: '{{.DEPGRAPH_ONLYPREFIXES | default ""}}'
+  _USER_DEPGRAPH_ONLYPREFIXES: '{{.DEPGRAPH_ONLYPREFIXES}}'
   _RESOLVED_DEPGRAPH_ONLYPREFIXES: '{{if ._USER_DEPGRAPH_ONLYPREFIXES}}{{._USER_DEPGRAPH_ONLYPREFIXES}}{{else}}{{._DEPGRAPH_ONLYPREFIXES_FALLBACK}}{{end}}'
 
   # Repository configuration.
@@ -81,7 +81,7 @@ tasks:
         echo ""
         echo "=== DEPGRAPH CONFIG ==="
         echo "DEPGRAPH_ENTRY_POINT:         {{.DEPGRAPH_ENTRY_POINT}}"
-        echo "DEPGRAPH_ONLYPREFIXES:       {{.DEPGRAPH_ONLYPREFIXES}}"
+        echo "DEPGRAPH_ONLYPREFIXES:        {{.DEPGRAPH_ONLYPREFIXES}}"
         echo "DEPGRAPH_OUTPUT_FILE:         {{.DEPGRAPH_OUTPUT_FILE}}"
         echo ""
         echo "=== GOPLS CONFIG ==="
