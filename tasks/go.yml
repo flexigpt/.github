@@ -14,11 +14,9 @@ vars:
   # Repository configuration.
   GREETING: '{{.GREETING | default "Hello, these are Go tasks!"}}'
   GO_REPO_DIR: '{{.GO_REPO_DIR | default "."}}'
-
-  # `GO_MODULE_PATH` remains dynamic. A supplied Task variable overrides it;
-  # otherwise it is resolved using `go list -m`.
-  GO_MODULE_PATH:
+  GO_MODULE_PATH_FALLBACK:
     sh: go list -m
+  GO_MODULE_PATH: '{{.GO_MODULE_PATH | default .GO_MODULE_PATH_FALLBACK}}'
 
   # Dependency graph configuration.
   DEPGRAPH_ENTRY_POINT: '{{.DEPGRAPH_ENTRY_POINT | default .GO_MODULE_PATH}}'
