@@ -105,7 +105,7 @@ tasks:
       - gomajor list
       - go-mod-upgrade -l
 
-  lint-gosort:
+  lint-sort:
     desc: Run refdir checks
     dir: "{{.GO_REPO_DIR}}"
     cmds:
@@ -168,16 +168,6 @@ tasks:
       - golangci-lint run -v ./...
 
   test:
-    desc: Run Go tests
-    dir: "{{.GO_REPO_DIR}}"
-    cmds:
-      - >-
-        go test
-        -count={{.GO_TEST_COUNT | shellQuote}}
-        -tags={{.GO_TEST_TAGS | shellQuote}}
-        {{.GO_TEST_PACKAGE_PATTERN | shellQuote}}
-
-  test-coverage:
     desc: Run Go tests and create a coverage profile
     dir: "{{.GO_REPO_DIR}}"
     cmds:
@@ -208,7 +198,7 @@ tasks:
   coverage:
     desc: Generate, analyze, and validate coverage
     cmds:
-      - task: test-coverage
+      - task: test
       - task: coverage-analysis
       - task: coverage-check
 
