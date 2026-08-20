@@ -51,7 +51,7 @@ vars:
 
   # Tool versions.
   GOPLS_VERSION: '{{.GOPLS_VERSION | default "v0.23.0"}}'
-  GOLANGCI_LINT_VERSION: '{{.GOLANGCI_LINT_VERSION | default "v2.12.2"}}'
+  GOLANGCI_LINT_VERSION: '{{.GOLANGCI_LINT_VERSION | default "v2.13.0"}}'
   GOMAJOR_VERSION: '{{.GOMAJOR_VERSION | default "v0.15.0"}}'
   GO_MOD_UPGRADE_VERSION: '{{.GO_MOD_UPGRADE_VERSION | default "v0.12.0"}}'
   GODEPGRAPH_VERSION: '{{.GODEPGRAPH_VERSION | default "v1.0.0"}}'
