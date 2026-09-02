@@ -1,0 +1,256 @@
+# https://taskfile.dev
+#
+# Generate sha256 as:
+# curl -sSL -H "Cache-Control: no-cache" -H "Pragma: no-cache" \
+#   https://raw.githubusercontent.com/flexigpt/.github/refs/heads/main/tasks/git.yml | shasum -a 256
+#
+# includes:
+#   git:
+#     taskfile: https://raw.githubusercontent.com/flexigpt/.github/refs/heads/main/tasks/git.yml
+#     checksum: <sha256>
+
+version: "3"
+
+env:
+  GIT_PAGER: cat
+
+vars:
+  GIT_REPO_DIR: '{{.GIT_REPO_DIR | default "."}}'
+  GIT_REMOTE: '{{.GIT_REMOTE | default "origin"}}'
+
+  # Optional input for tag-delete-command.
+  GIT_TAG: '{{.GIT_TAG | default ""}}'
+
+  # Optional inputs for tag-cmd-next.
+  GIT_TAG_UPGRADE_MINOR: '{{.GIT_TAG_UPGRADE_MINOR | default "false"}}'
+  GIT_TAG_UPGRADE_MAJOR: '{{.GIT_TAG_UPGRADE_MAJOR | default "false"}}'
+
+  # Optional inputs for tag-stats.
+  _USER_GIT_STATS_OLDER: '{{.GIT_STATS_OLDER | default ""}}'
+  _USER_GIT_STATS_NEWER: '{{.GIT_STATS_NEWER | default ""}}'
+
+tasks:
+  git-print-all-vars:
+    desc: Print Git task configuration variables
+    silent: true
+    cmds:
+      - |
+        echo "=== GIT CONFIG ==="
+        echo "GIT_REPO_DIR:      {{.GIT_REPO_DIR}}"
+        echo "GIT_REMOTE:        {{.GIT_REMOTE}}"
+        echo ""
+        echo "=== OPTIONAL INPUTS ==="
+        echo "GIT_TAG:           {{.GIT_TAG | default "(latest local tag)"}}"
+        echo "GIT_TAG_UPGRADE_MINOR: {{.GIT_TAG_UPGRADE_MINOR}}"
+        echo "GIT_TAG_UPGRADE_MAJOR: {{.GIT_TAG_UPGRADE_MAJOR}}"
+        echo "GIT_STATS_OLDER:   {{.GIT_STATS_OLDER | default "(initial commit)"}}"
+        echo "GIT_STATS_NEWER:   {{.GIT_STATS_NEWER | default "HEAD"}}"
+        echo ""
+
+  tags-last3:
+    desc: Print the last three "local" tags by committer date.
+    dir: "{{.GIT_REPO_DIR}}"
+    silent: true
+    cmds:
+      - echo "Last three local tags:"
+      - git tag --sort=-committerdate | head -n 3
+
+  # Usage:
+  #   task git:tag-cmd-delete
+  #   task git:tag-cmd-delete GIT_TAG=v0.20.3
+  #
+  # Without GIT_TAG, this selects the latest local tag by committer date.
+  # The task only prints deletion commands. It never deletes a tag itself.
+  tag-cmd-delete:
+    desc: Print deletion commands for GIT_TAG or the latest "local" tag
+    dir: "{{.GIT_REPO_DIR}}"
+    silent: true
+    cmds:
+      - |
+        tag={{.GIT_TAG | shellQuote}}
+        remote={{.GIT_REMOTE | shellQuote}}
+
+        if [ -z "$tag" ]; then
+          tag="$(git tag --sort=-committerdate | head -n 1)"
+        fi
+
+        if [ -z "$tag" ]; then
+          printf 'No tag was supplied and no local tags were found. If needed, run: git fetch %s --tags\n' "$remote" >&2
+          exit 1
+        fi
+
+        printf 'git tag -d %s; git push %s --delete tag %s\n' "$tag" "$remote" "$tag"
+
+  # Usage:
+  #   task git:tag-cmd-next
+  #   task git:tag-cmd-next GIT_TAG_UPGRADE_MINOR=true
+  #   task git:tag-cmd-next GIT_TAG_UPGRADE_MAJOR=true
+  #
+  # Reads the newest local tag as vMAJOR.MINOR.PATCH.
+  # Without an upgrade flag, it proposes a patch bump.
+  # Set GIT_TAG_UPGRADE_MINOR=true for a minor bump.
+  # Set GIT_TAG_UPGRADE_MAJOR=true for a major bump. Major wins if both are true.
+  # The task only prints the tag and push commands. It never creates or pushes a tag.
+  tag-cmd-next:
+    desc: Print the next semantic-version tag and push command without executing either
+    dir: "{{.GIT_REPO_DIR}}"
+    silent: true
+    cmds:
+      - |
+        remote={{.GIT_REMOTE | shellQuote}}
+        upgrade_minor={{.GIT_TAG_UPGRADE_MINOR | shellQuote}}
+        upgrade_major={{.GIT_TAG_UPGRADE_MAJOR | shellQuote}}
+        tags="$(git tag --sort=-committerdate | head -n 3)"
+
+        echo "Last 3 tags by committer date:"
+        printf '%s\n' "$tags"
+
+        latest_tag="$(printf '%s\n' "$tags" | head -n 1)"
+
+        if [ -z "$latest_tag" ]; then
+          printf 'No local tags were found. If needed, run: git fetch %s --tags and rerun this task.\n' "$remote" >&2
+          exit 1
+        fi
+
+        version="${latest_tag#v}"
+        major="${version%%.*}"
+        remainder="${version#*.}"
+        minor="${remainder%%.*}"
+        patch="${remainder#*.}"
+
+        if [ "$upgrade_major" = "true" ]; then
+          bump="major"
+          next_tag="v$((major + 1)).0.0"
+        elif [ "$upgrade_minor" = "true" ]; then
+          bump="minor"
+          next_tag="v${major}.$((minor + 1)).0"
+        else
+          bump="patch"
+          next_tag="v${major}.${minor}.$((patch + 1))"
+        fi
+
+        echo
+        echo "Suggested next $bump tag: $next_tag"
+        printf '# This suggestion was derived from local tag refs. If remote tags may have changed, first run:\n'
+        printf '#   git fetch %s --tags\n' "$remote"
+        printf 'git tag %s; git push %s --tags\n' "$next_tag" "$remote"
+
+  # Usage:
+  #   task git:tag-stats
+  #   task git:tag-stats GIT_STATS_OLDER=v0.20.3
+  #   task git:tag-stats GIT_STATS_NEWER=v0.21.0
+  #   task git:tag-stats GIT_STATS_OLDER=v0.20.3 GIT_STATS_NEWER=v0.21.0
+  #
+  # Missing GIT_STATS_OLDER resolves to the initial commit.
+  # Missing GIT_STATS_NEWER resolves to HEAD.
+  tag-stats:
+    desc: Print stats from GIT_STATS_OLDER or initial commit to GIT_STATS_NEWER or HEAD
+    dir: "{{.GIT_REPO_DIR}}"
+    silent: true
+    vars:
+      _GIT_INITIAL_COMMIT:
+        sh: 'git -C {{.GIT_REPO_DIR | shellQuote}} rev-list --max-parents=0 HEAD | sed -n "1p"'
+      _RESOLVED_GIT_STATS_OLDER: '{{if ._USER_GIT_STATS_OLDER}}{{._USER_GIT_STATS_OLDER}}{{else}}{{._GIT_INITIAL_COMMIT}}{{end}}'
+      _RESOLVED_GIT_STATS_NEWER: '{{if ._USER_GIT_STATS_NEWER}}{{._USER_GIT_STATS_NEWER}}{{else}}HEAD{{end}}'
+    cmds:
+      - task: tag-stats-report
+        vars:
+          GIT_STATS_REPORT_OLDER: '{{._RESOLVED_GIT_STATS_OLDER}}'
+          GIT_STATS_REPORT_NEWER: '{{._RESOLVED_GIT_STATS_NEWER}}'
+
+  # Usage:
+  #   task git:tag-stats-last-two-semver
+  #
+  # Selects the two highest v-prefixed tags using Git version sorting.
+  # This task requires two such tags and intentionally does not fall back
+  # to the initial commit or HEAD.
+  tag-stats-last-two-semver:
+    desc: Print stats between the two highest v-prefixed version tags
+    dir: "{{.GIT_REPO_DIR}}"
+    silent: true
+    vars:
+      _GIT_SEMVER_NEWER:
+        sh: 'git -C {{.GIT_REPO_DIR | shellQuote}} tag -l --sort=-v:refname "v[0-9]*" | sed -n "1p"'
+      _GIT_SEMVER_OLDER:
+        sh: 'git -C {{.GIT_REPO_DIR | shellQuote}} tag -l --sort=-v:refname "v[0-9]*" | sed -n "2p"'
+    preconditions:
+      - sh: 'test -n {{._GIT_SEMVER_OLDER | shellQuote}}'
+        msg: "tag-stats-last-two-semver requires at least two v-prefixed version tags."
+    cmds:
+      - task: tag-stats-report
+        vars:
+          GIT_STATS_REPORT_OLDER: '{{._GIT_SEMVER_OLDER}}'
+          GIT_STATS_REPORT_NEWER: '{{._GIT_SEMVER_NEWER}}'
+
+  # Internal only. Public tasks resolve the two revisions before calling this task.
+  tag-stats-report:
+    internal: true
+    desc: Print statistics for two resolved revisions
+    dir: "{{.GIT_REPO_DIR}}"
+    silent: true
+    requires:
+      vars:
+        - GIT_STATS_REPORT_OLDER
+        - GIT_STATS_REPORT_NEWER
+    cmds:
+      - |
+        older={{.GIT_STATS_REPORT_OLDER | shellQuote}}
+        newer={{.GIT_STATS_REPORT_NEWER | shellQuote}}
+
+        echo "Using revisions: older='$older', newer='$newer'"
+        echo "=== Net Work (final diff between $older and $newer) ==="
+        git diff --shortstat "$older" "$newer"
+
+        echo
+        echo "=== Actual Work (churn between $older and $newer) ==="
+
+        unique_files=$(git log "$older".."$newer" --name-only --pretty=format: | sort -u | wc -l | tr -d '[:space:]')
+        added_files=$(git log "$older".."$newer" --diff-filter=A --name-only --pretty=format: | sort -u | wc -l | tr -d '[:space:]')
+        deleted_files=$(git log "$older".."$newer" --diff-filter=D --name-only --pretty=format: | sort -u | wc -l | tr -d '[:space:]')
+        modified_files=$((unique_files - added_files - deleted_files))
+
+        lines_added=$(git log "$older".."$newer" --pretty=tformat: --numstat | awk '{ add += $1 } END { print add + 0 }')
+        lines_removed=$(git log "$older".."$newer" --pretty=tformat: --numstat | awk '{ del += $2 } END { print del + 0 }')
+
+        echo "Files touched: $unique_files, added: $added_files, deleted: $deleted_files, modified: $modified_files"
+        echo "Lines added: $lines_added, removed: $lines_removed"
+        echo "==="
+
+  # Usage:
+  #   cd /path/to/repository
+  #   task --taskfile "/absolute/path/to/tasks/git.yml" test GIT_REPO_DIR="$PWD"
+  #
+  # Runs every public Git task and all tag bump modes with safe inputs.
+  # It only reads Git data and prints proposed write commands.
+  # It requires at least two v-prefixed version tags.
+  git-test:
+    desc: Smoke-test all Git tasks without changing repository state
+    silent: true
+    cmds:
+      - echo "=== Vars ==="
+      - task: git-print-all-vars
+      - echo ""
+      - echo "=== Last3 tags ==="
+      - task: tags-last3
+      - echo ""
+      - echo "=== Delete command for latest tag ==="
+      - task: tag-cmd-delete
+      - echo ""
+      - echo "=== Next patch command ==="
+      - task: tag-cmd-next
+      - echo ""
+      - echo "=== Next minor command ==="
+      - task: tag-cmd-next
+        vars:
+          GIT_TAG_UPGRADE_MINOR: "true"
+      - echo ""
+      - echo "=== Next major command ==="
+      - task: tag-cmd-next
+        vars:
+          GIT_TAG_UPGRADE_MAJOR: "true"
+      - echo ""
+      - echo "=== Tag stats from initial commit to head ==="
+      - task: tag-stats
+      - echo ""
+      - echo "=== Tag stats last 2 semvers ==="
+      - task: tag-stats-last-two-semver
